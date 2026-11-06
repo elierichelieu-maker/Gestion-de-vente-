@@ -25,6 +25,7 @@ export interface Seller {
   phone: string;
   status?: 'Actif' | 'Inactif';
   lastLogin?: string;
+  password?: string; // Mot de passe pour connexion espace utilisateur (par email ou téléphone)
 }
 
 export interface SaleItem {

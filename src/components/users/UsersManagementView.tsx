@@ -19,6 +19,12 @@ import {
   ShoppingCart,
   Percent,
   Check,
+  Lock,
+  KeyRound,
+  Eye,
+  EyeOff,
+  UserCheck,
+  Sparkles,
 } from 'lucide-react';
 import { formatHTG } from '../../utils/formatters';
 
@@ -29,6 +35,9 @@ interface UsersManagementViewProps {
   onUpdateSeller: (seller: Seller) => void;
   onDeleteSeller: (sellerId: string) => void;
   onOpenNewSaleForSeller?: (sellerId: string) => void;
+  currentUser?: Seller | null;
+  onSelectCurrentUser?: (user: Seller) => void;
+  onOpenLoginModal?: () => void;
 }
 
 export const UsersManagementView: React.FC<UsersManagementViewProps> = ({
@@ -38,11 +47,18 @@ export const UsersManagementView: React.FC<UsersManagementViewProps> = ({
   onUpdateSeller,
   onDeleteSeller,
   onOpenNewSaleForSeller,
+  currentUser,
+  onSelectCurrentUser,
+  onOpenLoginModal,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'Actif' | 'Inactif'>('all');
   const [activeTab, setActiveTab] = useState<'users' | 'roles'>('users');
+
+  // Password visibility toggles
+  const [showAddPassword, setShowAddPassword] = useState(false);
+  const [showEditPassword, setShowEditPassword] = useState(false);
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -60,6 +76,7 @@ export const UsersManagementView: React.FC<UsersManagementViewProps> = ({
     targetMonthlyRevenue: 35000,
     commissionRate: 0.05,
     status: 'Actif',
+    password: 'opti2026',
   });
 
   const showToast = (message: string, type: 'success' | 'info' | 'error' = 'success') => {
@@ -149,6 +166,7 @@ export const UsersManagementView: React.FC<UsersManagementViewProps> = ({
       targetMonthlyRevenue: 35000,
       commissionRate: 0.05,
       status: 'Actif',
+      password: 'opti2026',
     });
   };
 
@@ -291,6 +309,18 @@ export const UsersManagementView: React.FC<UsersManagementViewProps> = ({
             <span>CSV</span>
           </button>
 
+          {onOpenLoginModal && (
+            <button
+              type="button"
+              onClick={onOpenLoginModal}
+              className="px-3.5 py-1.5 text-xs font-bold text-amber-950 bg-amber-400 hover:bg-amber-500 rounded-lg transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+              title="Se connecter avec email ou téléphone et mot de passe"
+            >
+              <KeyRound className="w-3.5 h-3.5" />
+              <span>Connexion Espace</span>
+            </button>
+          )}
+
           <button
             type="button"
             onClick={() => setIsAddModalOpen(true)}
@@ -299,6 +329,51 @@ export const UsersManagementView: React.FC<UsersManagementViewProps> = ({
             <UserPlus className="w-3.5 h-3.5" />
             <span>Nouvel Utilisateur</span>
           </button>
+        </div>
+      </div>
+
+      {/* User Space Connection Banner */}
+      <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-amber-950 text-white rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-700/50 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <div className="p-3 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 shrink-0">
+            <KeyRound className="w-6 h-6" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-bold text-sm text-white">Espace Utilisateur & Connexion Sécurisée</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                Email ou Numéro de téléphone + Mot de passe
+              </span>
+            </div>
+            <p className="text-xs text-slate-300 mt-1 max-w-2xl leading-relaxed">
+              Chaque commercial ou membre de l'équipe peut se connecter indifféremment avec son <strong>adresse email</strong> ou son <strong>numéro de téléphone mobile</strong> avec son mot de passe pour suivre ses ventes, quotas et commissions.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 w-full md:w-auto justify-end">
+          {currentUser && (
+            <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-xl border border-white/10 text-xs">
+              <img
+                src={currentUser.avatar}
+                alt={currentUser.name}
+                className="w-5 h-5 rounded-full object-cover ring-1 ring-amber-400"
+              />
+              <span className="text-slate-300">Connecté :</span>
+              <strong className="text-amber-300 font-semibold">{currentUser.name}</strong>
+            </div>
+          )}
+
+          {onOpenLoginModal && (
+            <button
+              type="button"
+              onClick={onOpenLoginModal}
+              className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition shadow-xs cursor-pointer whitespace-nowrap"
+            >
+              <UserCheck className="w-3.5 h-3.5" />
+              <span>{currentUser ? "Changer d'utilisateur" : "Se connecter"}</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -433,16 +508,23 @@ export const UsersManagementView: React.FC<UsersManagementViewProps> = ({
                             }}
                           />
                           <div>
-                            <span className="font-bold text-slate-900 block text-xs">{u.name}</span>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-slate-900 block text-xs">{u.name}</span>
+                              {currentUser?.id === u.id && (
+                                <span className="px-1.5 py-0.2 rounded bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-bold">
+                                  Session active
+                                </span>
+                              )}
+                            </div>
                             <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
-                              <span className="flex items-center gap-1">
+                              <span className="flex items-center gap-1" title="Identifiant Email">
                                 <Mail className="w-3 h-3 text-slate-400" />
                                 <span>{u.email}</span>
                               </span>
                               {u.phone && (
                                 <>
                                   <span>·</span>
-                                  <span className="flex items-center gap-1">
+                                  <span className="flex items-center gap-1 font-mono" title="Identifiant Numéro de Téléphone">
                                     <Phone className="w-3 h-3 text-slate-400" />
                                     <span>{u.phone}</span>
                                   </span>
@@ -501,6 +583,25 @@ export const UsersManagementView: React.FC<UsersManagementViewProps> = ({
 
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          {onSelectCurrentUser && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onSelectCurrentUser(u);
+                                showToast(`Connecté à l'espace de ${u.name}`);
+                              }}
+                              title="Se connecter avec ce compte (Email ou Téléphone)"
+                              className={`px-2 py-1 text-[11px] font-medium rounded border transition-colors whitespace-nowrap flex items-center gap-1 shadow-2xs cursor-pointer ${
+                                currentUser?.id === u.id
+                                  ? 'bg-amber-100 text-amber-900 border-amber-300 font-bold'
+                                  : 'text-slate-700 bg-white hover:bg-amber-50 hover:border-amber-300 border-slate-200'
+                              }`}
+                            >
+                              <UserCheck className="w-3 h-3 text-amber-600" />
+                              <span>{currentUser?.id === u.id ? 'Connecté' : 'Connexion'}</span>
+                            </button>
+                          )}
+
                           {onOpenNewSaleForSeller && (
                             <button
                               type="button"
@@ -760,6 +861,51 @@ export const UsersManagementView: React.FC<UsersManagementViewProps> = ({
                 </div>
               </div>
 
+              {/* Password for user login */}
+              <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-amber-700" />
+                    <span>Mot de passe de connexion</span>
+                  </label>
+                  <span className="text-[10px] text-amber-700">Pour connexion Email ou Téléphone</span>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showAddPassword ? 'text' : 'password'}
+                    value={newUserData.password || ''}
+                    onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                    placeholder="opti2026 (par défaut)"
+                    className="w-full pl-3 pr-24 py-1.5 text-xs bg-white border border-amber-300 rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  />
+                  <div className="absolute right-1 top-1 flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setNewUserData({
+                          ...newUserData,
+                          password: `opti${Math.floor(1000 + Math.random() * 9000)}`,
+                        })
+                      }
+                      className="px-2 py-0.5 text-[10px] font-semibold bg-amber-100 hover:bg-amber-200 rounded text-amber-900 cursor-pointer"
+                    >
+                      Générer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowAddPassword(!showAddPassword)}
+                      className="p-1 text-slate-400 hover:text-slate-700"
+                      tabIndex={-1}
+                    >
+                      {showAddPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Ce mot de passe permettra à l'utilisateur de se connecter à son espace avec son email OU son numéro de téléphone.
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-slate-700 mb-1">
@@ -913,6 +1059,51 @@ export const UsersManagementView: React.FC<UsersManagementViewProps> = ({
                     className="w-full px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-none focus:border-slate-500"
                   />
                 </div>
+              </div>
+
+              {/* Password for user login */}
+              <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-amber-700" />
+                    <span>Mot de passe de connexion</span>
+                  </label>
+                  <span className="text-[10px] text-amber-700">Email ou Numéro de téléphone</span>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showEditPassword ? 'text' : 'password'}
+                    value={editingUser.password || ''}
+                    onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value })}
+                    placeholder="Entrez un mot de passe (défaut: opti2026)"
+                    className="w-full pl-3 pr-24 py-1.5 text-xs bg-white border border-amber-300 rounded-lg font-mono focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  />
+                  <div className="absolute right-1 top-1 flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEditingUser({
+                          ...editingUser,
+                          password: `opti${Math.floor(1000 + Math.random() * 9000)}`,
+                        })
+                      }
+                      className="px-2 py-0.5 text-[10px] font-semibold bg-amber-100 hover:bg-amber-200 rounded text-amber-900 cursor-pointer"
+                    >
+                      Générer
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowEditPassword(!showEditPassword)}
+                      className="p-1 text-slate-400 hover:text-slate-700"
+                      tabIndex={-1}
+                    >
+                      {showEditPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  Ce mot de passe permet à ce collaborateur de se connecter avec son email ou son numéro de téléphone.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

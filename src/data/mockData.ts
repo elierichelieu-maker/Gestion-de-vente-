@@ -10,6 +10,8 @@ export const INITIAL_SELLERS: Seller[] = [
     targetMonthlyRevenue: 45000,
     commissionRate: 0.05,
     phone: '+33 6 42 18 90 23',
+    password: 'opti2026',
+    status: 'Actif',
   },
   {
     id: 'sel-2',
@@ -20,6 +22,8 @@ export const INITIAL_SELLERS: Seller[] = [
     targetMonthlyRevenue: 38000,
     commissionRate: 0.05,
     phone: '+33 6 55 91 14 07',
+    password: 'opti2026',
+    status: 'Actif',
   },
   {
     id: 'sel-3',
@@ -30,6 +34,8 @@ export const INITIAL_SELLERS: Seller[] = [
     targetMonthlyRevenue: 35000,
     commissionRate: 0.045,
     phone: '+33 6 12 84 55 99',
+    password: 'opti2026',
+    status: 'Actif',
   },
   {
     id: 'sel-4',
@@ -40,6 +46,8 @@ export const INITIAL_SELLERS: Seller[] = [
     targetMonthlyRevenue: 40000,
     commissionRate: 0.05,
     phone: '+33 6 78 33 21 44',
+    password: 'opti2026',
+    status: 'Actif',
   },
   {
     id: 'sel-5',
@@ -50,6 +58,8 @@ export const INITIAL_SELLERS: Seller[] = [
     targetMonthlyRevenue: 24000,
     commissionRate: 0.04,
     phone: '+33 6 90 12 77 65',
+    password: 'opti2026',
+    status: 'Actif',
   },
 ];
 

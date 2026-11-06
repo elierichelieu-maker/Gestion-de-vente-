@@ -35,7 +35,8 @@
         "commissionRate": { "type": "number" },
         "phone": { "type": "string" },
         "status": { "type": "string" },
-        "lastLogin": { "type": "string" }
+        "lastLogin": { "type": "string" },
+        "password": { "type": "string" }
       },
       "required": ["id", "name", "role", "email"]
     },

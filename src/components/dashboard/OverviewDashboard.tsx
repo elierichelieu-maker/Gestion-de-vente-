@@ -19,6 +19,8 @@ interface OverviewDashboardProps {
   onNavigateToExchange?: () => void;
   onRestock?: (productId: string, quantity: number, reason?: string) => void;
   onPrintSale?: (sale: Sale) => void;
+  currentUser?: Seller | null;
+  onOpenLoginModal?: () => void;
 }
 
 export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
@@ -34,6 +36,8 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
   onNavigateToExchange,
   onRestock,
   onPrintSale,
+  currentUser,
+  onOpenLoginModal,
 }) => {
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
 
@@ -109,6 +113,67 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Personalized User Space Greeting */}
+      {currentUser && (
+        <div className="bg-gradient-to-r from-amber-500/10 via-amber-600/5 to-white border border-amber-200/90 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-center gap-3.5">
+            <img
+              src={currentUser.avatar}
+              alt={currentUser.name}
+              className="w-11 h-11 rounded-full object-cover ring-2 ring-amber-400 shadow-xs shrink-0"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-base font-bold text-slate-900">
+                  Bonjour, {currentUser.name} !
+                </span>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+                  {currentUser.role}
+                </span>
+                <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  Connecté
+                </span>
+              </div>
+              <div className="text-xs text-slate-500 flex items-center gap-2 mt-0.5 flex-wrap">
+                <span>Identifiants : <strong className="text-slate-700">{currentUser.email}</strong></span>
+                {currentUser.phone && (
+                  <>
+                    <span>•</span>
+                    <span className="font-mono text-slate-700">{currentUser.phone}</span>
+                  </>
+                )}
+                <span>•</span>
+                <span>Objectif : <strong className="text-amber-800 font-mono">{formatHTG(currentUser.targetMonthlyRevenue)}</strong></span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            {onOpenLoginModal && (
+              <button
+                type="button"
+                onClick={onOpenLoginModal}
+                className="text-xs font-semibold text-slate-700 hover:text-amber-900 px-3 py-1.5 rounded-lg bg-white hover:bg-amber-50 border border-slate-200 hover:border-amber-300 transition-all shadow-2xs cursor-pointer flex items-center gap-1.5"
+                title="Se connecter avec un autre compte via Email ou Téléphone"
+              >
+                <span>Changer d'utilisateur</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onNavigateToSellers}
+              className="text-xs font-bold text-amber-950 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 transition-all shadow-xs cursor-pointer flex items-center gap-1"
+            >
+              <span>Mon Espace Ventes</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Top Banner & Time Range Control */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200">
         <div>

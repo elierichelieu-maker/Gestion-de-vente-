@@ -49,6 +49,9 @@ const MobileDeploymentGuideModal = React.lazy(() =>
 const ShareAppModal = React.lazy(() =>
   import('./components/common/ShareAppModal').then((m) => ({ default: m.ShareAppModal }))
 );
+const UserLoginModal = React.lazy(() =>
+  import('./components/auth/UserLoginModal').then((m) => ({ default: m.UserLoginModal }))
+);
 import { PWAInstallButton } from './components/common/PWAInstallButton';
 import {
   LayoutDashboard,
@@ -68,6 +71,10 @@ import {
   Share2,
   Copy,
   Check,
+  KeyRound,
+  LogOut,
+  ChevronDown,
+  UserCheck,
 } from 'lucide-react';
 import {
   seedInitialDataIfEmpty,
@@ -123,6 +130,21 @@ export default function App() {
   const [isMobileGuideOpen, setIsMobileGuideOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [saleToPrint, setSaleToPrint] = useState<Sale | null>(null);
+
+  // User Space Session (Logged in user)
+  const [currentUser, setCurrentUser] = useState<Seller | null>(() => {
+    try {
+      const stored = localStorage.getItem('optiboissons_current_user_v2');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+      return INITIAL_SELLERS[0] || null;
+    } catch {
+      return INITIAL_SELLERS[0] || null;
+    }
+  });
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   // Core Data loaded from localStorage or seeded
   const [products, setProducts] = useState<Product[]>(() => {
@@ -274,6 +296,40 @@ export default function App() {
       console.error(e);
     }
   }, [exchangeTransactions]);
+
+  // Persist Current User Session
+  useEffect(() => {
+    try {
+      if (currentUser) {
+        localStorage.setItem('optiboissons_current_user_v2', JSON.stringify(currentUser));
+      } else {
+        localStorage.removeItem('optiboissons_current_user_v2');
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }, [currentUser]);
+
+  // Keep currentUser in sync when sellers list updates from Cloud Firestore
+  useEffect(() => {
+    if (currentUser) {
+      const fresh = sellers.find((s) => s.id === currentUser.id);
+      if (fresh) {
+        setCurrentUser(fresh);
+      }
+    }
+  }, [sellers]);
+
+  // User Login Success Handler
+  const handleLoginSuccess = (user: Seller) => {
+    setCurrentUser(user);
+    const updated: Seller = {
+      ...user,
+      lastLogin: new Date().toISOString(),
+    };
+    setSellers((prev) => prev.map((s) => (s.id === user.id ? updated : s)));
+    syncSaveSeller(updated);
+  };
 
   // Real-time Cloud Synchronization across Computer, Phone, and Tablet
   const [isCloudConnected, setIsCloudConnected] = useState(true);
@@ -797,6 +853,108 @@ export default function App() {
 
           {/* Primary Action Button */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            {/* User Space Session & Login Profile */}
+            <div className="relative">
+              {currentUser ? (
+                <button
+                  type="button"
+                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                  className="flex items-center gap-2 pl-1.5 pr-2.5 py-1 rounded-xl border border-slate-200 hover:border-amber-400 bg-white hover:bg-amber-50/50 shadow-2xs transition-all cursor-pointer"
+                  title="Mon Espace Collaborateur - Cliquer pour changer de compte ou voir les détails"
+                >
+                  <img
+                    src={currentUser.avatar}
+                    alt={currentUser.name}
+                    className="w-7 h-7 rounded-full object-cover border border-amber-500/40"
+                    onError={(e) => {
+                      (e.target as HTMLElement).style.display = 'none';
+                    }}
+                  />
+                  <div className="text-left hidden xl:block leading-tight max-w-[120px]">
+                    <span className="text-xs font-bold text-slate-800 block truncate">
+                      {currentUser.name}
+                    </span>
+                    <span className="text-[10px] text-slate-400 block truncate">
+                      {currentUser.role}
+                    </span>
+                  </div>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsLoginModalOpen(true)}
+                  className="px-3 py-1.5 text-xs font-bold text-amber-950 bg-amber-400 hover:bg-amber-500 rounded-lg transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+                  title="Connexion avec Email ou Téléphone et mot de passe"
+                >
+                  <KeyRound className="w-3.5 h-3.5" />
+                  <span>Connexion</span>
+                </button>
+              )}
+
+              {/* User Dropdown */}
+              {isUserMenuOpen && currentUser && (
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-150">
+                  <div className="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
+                    <img
+                      src={currentUser.avatar}
+                      alt={currentUser.name}
+                      className="w-10 h-10 rounded-full object-cover border border-slate-200"
+                    />
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-slate-900 truncate">{currentUser.name}</div>
+                      <div className="text-[11px] text-slate-500 truncate">{currentUser.role}</div>
+                      <div className="text-[10px] text-slate-400 truncate font-mono mt-0.5">{currentUser.email}</div>
+                      {currentUser.phone && (
+                        <div className="text-[10px] text-slate-400 truncate font-mono">{currentUser.phone}</div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="px-2 py-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        setActiveTab('users');
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-amber-700 rounded-lg flex items-center gap-2 transition cursor-pointer"
+                    >
+                      <UserCog className="w-4 h-4 text-slate-400" />
+                      <span>Gestion de l'Équipe & Rôles</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsUserMenuOpen(false);
+                        setIsLoginModalOpen(true);
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs text-slate-700 hover:bg-slate-50 hover:text-amber-700 rounded-lg flex items-center gap-2 transition cursor-pointer"
+                    >
+                      <ArrowLeftRight className="w-4 h-4 text-slate-400" />
+                      <span>Changer d'utilisateur (Email / Tél)</span>
+                    </button>
+                  </div>
+
+                  <div className="border-t border-slate-100 px-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCurrentUser(null);
+                        setIsUserMenuOpen(false);
+                        setIsLoginModalOpen(true);
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs text-rose-600 hover:bg-rose-50 rounded-lg flex items-center gap-2 transition font-medium cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4 text-rose-500" />
+                      <span>Se déconnecter</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* PWA Direct Mobile Install Button */}
             <PWAInstallButton />
 
@@ -945,7 +1103,7 @@ export default function App() {
               sellers={sellers}
               sales={sales}
               onOpenNewSale={() => {
-                setSelectedSellerForSale(undefined);
+                setSelectedSellerForSale(currentUser?.id || undefined);
                 setSelectedCustomerForSale(null);
                 setIsNewSaleOpen(true);
               }}
@@ -957,6 +1115,8 @@ export default function App() {
               exchangeRates={exchangeRates}
               onRestock={handleRestock}
               onPrintSale={setSaleToPrint}
+              currentUser={currentUser}
+              onOpenLoginModal={() => setIsLoginModalOpen(true)}
             />
           )}
 
@@ -988,7 +1148,7 @@ export default function App() {
               customers={customers}
               onCompleteSale={handleCompleteSale}
               onOpenNewSale={() => {
-                setSelectedSellerForSale(undefined);
+                setSelectedSellerForSale(currentUser?.id || undefined);
                 setSelectedCustomerForSale(null);
                 setIsNewSaleOpen(true);
               }}
@@ -1007,7 +1167,7 @@ export default function App() {
               exchangeRates={exchangeRates}
               onUpdateSaleStatus={handleUpdateSaleStatus}
               onOpenNewSale={() => {
-                setSelectedSellerForSale(undefined);
+                setSelectedSellerForSale(currentUser?.id || undefined);
                 setSelectedCustomerForSale(null);
                 setIsNewSaleOpen(true);
               }}
@@ -1042,6 +1202,9 @@ export default function App() {
               onUpdateSeller={handleUpdateSeller}
               onDeleteSeller={handleDeleteSeller}
               onOpenNewSaleForSeller={handleOpenSaleForSeller}
+              currentUser={currentUser}
+              onSelectCurrentUser={(u) => handleLoginSuccess(u)}
+              onOpenLoginModal={() => setIsLoginModalOpen(true)}
             />
           )}
 
@@ -1066,7 +1229,7 @@ export default function App() {
             products={products}
             sellers={sellers}
             onCompleteSale={handleCompleteSale}
-            initialSellerId={selectedSellerForSale}
+            initialSellerId={selectedSellerForSale || currentUser?.id}
             initialCustomerName={selectedCustomerForSale?.name}
             initialCustomerCompany={selectedCustomerForSale?.company}
             onPrintSale={setSaleToPrint}
@@ -1093,6 +1256,16 @@ export default function App() {
           <ShareAppModal
             isOpen={isShareModalOpen}
             onClose={() => setIsShareModalOpen(false)}
+          />
+        )}
+
+        {isLoginModalOpen && (
+          <UserLoginModal
+            isOpen={isLoginModalOpen}
+            onClose={() => setIsLoginModalOpen(false)}
+            sellers={sellers}
+            currentUser={currentUser}
+            onLoginSuccess={handleLoginSuccess}
           />
         )}
       </React.Suspense>
